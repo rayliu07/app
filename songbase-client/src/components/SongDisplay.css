@@ -1,0 +1,29 @@
+.song-display-container {
+  font-family: monospace;
+  white-space: pre;
+  line-height: 1.6;
+  margin-top: 1rem;
+}
+
+.song-line {
+  margin-bottom: 1.2rem;
+}
+
+.chord-line {
+  color: #007acc;
+  font-weight: bold;
+  margin: 0;
+}
+
+.lyric-line {
+  margin: 0;
+}
+
+.section-header {
+  font-size: 1rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: #555;
+}
