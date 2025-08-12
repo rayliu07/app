@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 //import SongDisplay from './SongDisplay - SongBase';
-import SongDisplay from '../components/SongDisplay';
+import SongDisplay from '../components/SongDisplaySongbase';
 
 
 
