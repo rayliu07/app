@@ -2,7 +2,8 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 //import SongDisplay from './SongDisplay - SongBase';
-import SongDisplay from '../components/SongDisplaySongbase';
+import ParsedSongDisplay from './ParsedSongDisplay';
+
 
 
 
@@ -31,8 +32,8 @@ function SongDetail() {
      <div style={{ padding: '2rem' }}>
       <h1>{song.title}</h1>
 
-      {/* Here’s where you render the lyrics using SongDisplay */}
-      <SongDisplay lyrics={song.lyrics} showChords={true}/>
+      {/* Here’s where you render the lyrics using ParsedSongDisplay */}
+      <ParsedSongDisplay rawLyrics={song.lyrics} />
 
     </div>
   );

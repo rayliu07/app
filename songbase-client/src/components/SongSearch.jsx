@@ -23,9 +23,13 @@ function SongSearch({ language }) {//language is passed as a prop from the paren
         }
         const res = await fetch(url);
         const data = await res.json();
-        //this will set the songs state to the data returned from the API
-        //NOTE: this returns all the columns for each song entry, the filter is done in the return section
-        setSongs(data || []);
+        // Sort songs alphabetically by title, ignoring single or double quotes
+        const sortedSongs = (data || []).sort((a, b) => {
+          const cleanTitleA = a.title.replace(/^['"]+/, '');
+          const cleanTitleB = b.title.replace(/^['"]+/, '');
+          return cleanTitleA.localeCompare(cleanTitleB);
+        });
+        setSongs(sortedSongs);
         console.log(url);
       } catch (err) {
         console.error('Failed to fetch songs:', err);
