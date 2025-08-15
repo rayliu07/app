@@ -23,11 +23,19 @@ function SongSearch({ language }) {//language is passed as a prop from the paren
         }
         const res = await fetch(url);
         const data = await res.json();
-        // Sort songs alphabetically by title, ignoring single or double quotes
+        // Sort songs alphabetically by title, word by word, ignoring special characters
         const sortedSongs = (data || []).sort((a, b) => {
-          const cleanTitleA = a.title.replace(/^['"]+/, '');
-          const cleanTitleB = b.title.replace(/^['"]+/, '');
-          return cleanTitleA.localeCompare(cleanTitleB);
+          const cleanTitleA = a.title.replace(/[^a-zA-Z0-9\s]/g, '').toLowerCase();
+          const cleanTitleB = b.title.replace(/[^a-zA-Z0-9\s]/g, '').toLowerCase();
+          const wordsA = cleanTitleA.split(' ');
+          const wordsB = cleanTitleB.split(' ');
+          for (let i = 0; i < Math.max(wordsA.length, wordsB.length); i++) {
+            const wordA = wordsA[i] || '';
+            const wordB = wordsB[i] || '';
+            const comparison = wordA.localeCompare(wordB);
+            if (comparison !== 0) return comparison;
+          }
+          return 0;
         });
         setSongs(sortedSongs);
         console.log(url);

@@ -7,7 +7,7 @@ const songsRouter = express.Router();
 songsRouter.get('/', async (req, res) => {
   const { language } = req.query;
   try {
-    const result = await pool.query('SELECT * FROM songs WHERE language = $1 ORDER BY id', [language]);
+    const result = await pool.query('SELECT  id, title, language FROM songs WHERE language = $1 ORDER BY id', [language]);
     res.json(result.rows);
     console.log(result.rows.length);
   } catch (err) {
