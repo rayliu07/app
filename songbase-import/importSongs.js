@@ -21,13 +21,12 @@ async function fetchSongsByLanguage(lang) {
 }
 
 async function insertSong(song, language) {
-  const { id, title, author, lyrics, key } = song;
+  const { id, title, author, lyrics, key, language_links } = song; // add language_links here
   try {
     await pool.query(`
-      INSERT INTO songs (song_id, title, author, lyrics, key, language)
-      VALUES ($1, $2, $3, $4, $5, $6)
-      ON CONFLICT (song_id) DO NOTHING
-    `, [id, title, author, lyrics, null, language]);
+      INSERT INTO songs (songbase_id, title, author, lyrics, key, language, language_links)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+    `, [id, title, author, lyrics, null, language, language_links ]);
   } catch (err) {
     console.error(`Error inserting song ${id}:`, err.message);
   }
