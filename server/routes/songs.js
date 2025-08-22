@@ -3,28 +3,25 @@ import pool from '../db/pool.js';
 
 const songsRouter = express.Router();
 
-// GET all songs
+// pull all the songs with the elected language
 songsRouter.get('/', async (req, res) => {
+  // the curly braces allows for easy extraction of query parameters
   const { language } = req.query;
   try {
     const result = await pool.query('SELECT  id, title, language FROM songs WHERE language = $1 ORDER BY id', [language]);
     res.json(result.rows);
-    console.log(result.rows.length);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
 // GET /search?language=...&q=...
-// server/routes/songs.js
 songsRouter.get('/search', async (req, res) => {
   const { language, q } = req.query;
-
   try {
     let result;
-
+    // Numeric search with language: find books by language, then song by number in that book
     if (q && /^\d+$/.test(q.trim()) && language) {
-      // Numeric search with language: find book by language, then song by number in that book
       // 1. Find the book for the language
       const bookRes = await pool.query('SELECT id FROM books WHERE language = $1', [[language]]);
       if (!bookRes.rows.length) {
@@ -80,7 +77,6 @@ songsRouter.get('/search', async (req, res) => {
 
 
 // GET a single song by ID
-// server/routes/songs.js
 songsRouter.get('/:id', async (req, res) => {
   const songId = Number(req.params.id);
 
@@ -129,7 +125,11 @@ songsRouter.get('/:id', async (req, res) => {
       if (Array.isArray(links) && links.length > 0) {
         // Fetch all songs in one query
         const { rows } = await pool.query(
-          `SELECT id, songbase_id, title, language FROM songs WHERE songbase_id = ANY($1)`,
+          `SELECT s.songbase_id, s.id, s.title, s.language, m.number_in_book
+          FROM songs s
+          JOIN book_song_map m ON s.songbase_id = m.songbase_id
+          WHERE s.songbase_id = ANY($1)
+          ORDER BY m.number_in_book::int ASC`,
           [links]
         );
 
@@ -139,7 +139,8 @@ songsRouter.get('/:id', async (req, res) => {
           language: row.language,
           title: row.title,
           url: `/songs/${row.id}`,
-          songbase_id: row.songbase_id
+          songbase_id: row.songbase_id,
+          number_in_book: row.number_in_book
         }));
       }
     } else {

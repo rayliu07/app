@@ -1,9 +1,8 @@
-// src/pages/SongDetail.jsx
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 //import SongDisplay from './SongDisplay - SongBase';
-import ParsedSongDisplay from './ParsedSongDisplay';
-import ExtraInformation from './ExtraInformation';
+import ParsedSongDisplay from '../SongDetail/ParsedSongDisplay';
+import ExtraInformation from '../SongDetail/ExtraInformation';
 
 
 
@@ -16,7 +15,6 @@ function SongDetail() {
     const fetchSong = async () => {
       try {
         const res = await fetch(`${process.env.REACT_APP_API_URL}/songs/${id}`);
-        console.log(`${process.env.REACT_APP_API_URL}/songs/${id}`);
         const data = await res.json();
         setSong(data);
       } catch (err) {
