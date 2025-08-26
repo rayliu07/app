@@ -1,28 +1,73 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 
 function BookDetail() {
   const { slug } = useParams();
-  const [songs, setSongs] = useState(null);
-  
-  useEffect(() => {
-    const fetchBook = async () => {
-      try {
-        const res = await fetch(`${process.env.REACT_APP_API_URL}/books/${slug}`);
-        const data = await res.json();
+  const [songs, setSongs] = useState([]);
+  const [nextCursor, setNextCursor] = useState(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const loadingRef = useRef(false);
+
+  const fetchSongs = async (cursor = null) => {
+    if (loadingRef.current) return;
+    setLoading(true);
+    loadingRef.current = true;
+    try {
+      const url = new URL(`${process.env.REACT_APP_API_URL}/books/${slug}`);
+      if (cursor !== null) url.searchParams.append('cursor', cursor);
+      const res = await fetch(url);
+      const data = await res.json();
+      if (cursor) {
+        setSongs((prev) => [...prev, ...data.songs]);
+      } else {
         setSongs(data.songs);
-      } catch (err) {
-        console.error('Error fetching book:', err);
       }
+      setNextCursor(data.nextCursor);
+      setHasMore(data.hasMore);
+    } catch (err) {
+      console.error('Error fetching book:', err);
+    } finally {
+      setLoading(false);
+      loadingRef.current = false;
+    }
+  };
+
+  useEffect(() => {
+    setSongs([]);
+    setNextCursor(null);
+    setHasMore(false);
+    fetchSongs();
+    // eslint-disable-next-line
+  }, [slug]);
+
+  useEffect(() => {
+    if (!hasMore) return;
+
+    let debounceTimeout = null;
+    const handleScroll = () => {
+      if (debounceTimeout) clearTimeout(debounceTimeout);
+      debounceTimeout = setTimeout(() => {
+        if (
+          window.innerHeight + window.scrollY >= document.body.offsetHeight - 200 &&
+          hasMore &&
+          !loadingRef.current
+        ) {
+          fetchSongs(nextCursor);
+        }
+      }, 10); // reduced from 100ms to 10ms
     };
 
-    fetchBook();
-  }, [slug]);
-  
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (debounceTimeout) clearTimeout(debounceTimeout);
+    };
+    // eslint-disable-next-line
+  }, [hasMore, nextCursor]);
 
-
-  if (!songs) return <p>Loading book...</p>;
+  if (!songs || (songs.length === 0 && loading)) return <p>Loading book...</p>;
 
   return (
     <div style={{ padding: '2rem' }}>
@@ -33,6 +78,7 @@ function BookDetail() {
           </Link>
         </div>
       ))}
+      {loading && <p>Loading more...</p>}
     </div>
   );
 }

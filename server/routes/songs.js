@@ -5,11 +5,48 @@ const songsRouter = express.Router();
 
 // pull all the songs with the elected language
 songsRouter.get('/', async (req, res) => {
-  // the curly braces allows for easy extraction of query parameters
-  const { language } = req.query;
+  const { language, cursor } = req.query;
+  const pageSize = 100;
   try {
-    const result = await pool.query('SELECT  id, title, language FROM songs WHERE language = $1 ORDER BY id', [language]);
-    res.json(result.rows);
+    let params = [];
+    let where = '';
+    // Ensure language is always set to 'english' if not provided
+    const lang = language || 'english';
+    params.push(lang);
+    where = `WHERE language = $1`;
+
+    // Use normalized title as cursor for correct alphabetical pagination
+    if (cursor !== undefined) {
+      params.push(cursor);
+      where += ` AND LOWER(REGEXP_REPLACE(title, '^[^a-zA-Z]+', '')) > $${params.length}`;
+    }
+    const q = `
+      SELECT id, title, language,
+        LOWER(REGEXP_REPLACE(title, '^[^a-zA-Z]+', '')) AS normalized_title
+      FROM songs
+      ${where}
+      ORDER BY normalized_title ASC
+      LIMIT ${pageSize + 1}
+    `;
+    const result = await pool.query(q, params);
+
+    let hasMore = false;
+    let nextCursor = null;
+    let songs = result.rows;
+    if (songs.length > pageSize) {
+      hasMore = true;
+      songs = songs.slice(0, pageSize);
+      nextCursor = songs[songs.length - 1].normalized_title;
+    }
+
+    // Remove normalized_title from response
+    songs = songs.map(({ normalized_title, ...rest }) => rest);
+
+    res.json({
+      songs,
+      nextCursor,
+      hasMore
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -48,7 +85,7 @@ songsRouter.get('/search', async (req, res) => {
       result = songRes.rows;
     } else if (q) {
       // Text: search in title + lyrics, and filter by language if provided
-      let queryText = 'SELECT * FROM songs WHERE 1=1';
+      let queryText = 'SELECT id, title FROM songs WHERE 1=1';
       const queryParams = [];
       if (language) {
         queryText += ` AND language = $${queryParams.length + 1}`;
@@ -56,15 +93,9 @@ songsRouter.get('/search', async (req, res) => {
       }
       queryText += ` AND (title ILIKE $${queryParams.length + 1} OR lyrics ILIKE $${queryParams.length + 1})`;
       queryParams.push(`%${q}%`);
-      queryText += ' ORDER BY id';
+      queryText += ` ORDER BY LOWER(REGEXP_REPLACE(title, '^[^a-zA-Z]+', '')) ASC`;
       result = (await pool.query(queryText, queryParams)).rows;
-    } else if (language) {
-      const queryText = 'SELECT * FROM songs WHERE language = $1 ORDER BY id';
-      result = (await pool.query(queryText, [language])).rows;
-    } else {
-      const queryText = 'SELECT * FROM songs ORDER BY id';
-      result = (await pool.query(queryText)).rows;
-    }
+    } 
 
     res.json(result);
 
@@ -148,7 +179,6 @@ songsRouter.get('/:id', async (req, res) => {
     }
 
     res.json(song);
-    console.log(song);
 
   } catch (err) {
     console.error(err);
