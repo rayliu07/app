@@ -90,7 +90,7 @@ function SongSearch({ language }) {
       loadingRef.current = false;
     }
   };
-
+  console.log(songs);
   return (
     <div className="p-4 max-w-xl mx-auto">
       <input

@@ -85,17 +85,30 @@ songsRouter.get('/search', async (req, res) => {
       result = songRes.rows;
     } else if (q) {
       // Text: search in title + lyrics, and filter by language if provided
-      let queryText = 'SELECT id, title FROM songs WHERE 1=1';
-      const queryParams = [];
-      if (language) {
-        queryText += ` AND language = $${queryParams.length + 1}`;
-        queryParams.push(language);
-      }
-      queryText += ` AND (title ILIKE $${queryParams.length + 1} OR lyrics ILIKE $${queryParams.length + 1})`;
-      queryParams.push(`%${q}%`);
-      queryText += ` ORDER BY LOWER(REGEXP_REPLACE(title, '^[^a-zA-Z]+', '')) ASC`;
+      let queryText = `
+        SELECT id, title 
+        FROM songs
+        WHERE language = $1
+          AND (title ILIKE $2 OR lyrics ILIKE $3)
+        ORDER BY
+          CASE 
+            WHEN LOWER(title) LIKE LOWER($4) THEN 1   -- Titles starting with query
+            WHEN LOWER(title) LIKE LOWER($5) THEN 2   -- Titles containing query
+            ELSE 3                                    -- Lyrics containing query
+          END,
+          LOWER(REGEXP_REPLACE(title, '^[^a-zA-Z]+', '')) ASC
+      `;
+
+      const queryParams = [
+        language,
+        `%${q}%`,       // $2: for title ILIKE
+        `%${q}%`,       // $3: for lyrics ILIKE
+        `${q.toLowerCase()}%`, // $4: title starts with query
+        `%${q.toLowerCase()}%` // $5: title contains query
+      ];
+
       result = (await pool.query(queryText, queryParams)).rows;
-    } 
+    }
 
     res.json(result);
 
