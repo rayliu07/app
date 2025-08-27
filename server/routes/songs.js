@@ -3,6 +3,16 @@ import pool from '../db/pool.js';
 
 const songsRouter = express.Router();
 
+function encodeCursor(rank, title) {
+  return `${rank}|${title}`;
+}
+
+function decodeCursor(cursor) {
+  const [rank, ...titleParts] = cursor.split('|');
+  return { rank: Number(rank), title: titleParts.join('|') };
+}
+
+
 // pull all the songs with the elected language
 songsRouter.get('/', async (req, res) => {
   const { language, cursor } = req.query;
@@ -54,69 +64,79 @@ songsRouter.get('/', async (req, res) => {
 
 // GET /search?language=...&q=...
 songsRouter.get('/search', async (req, res) => {
-  const { language, q } = req.query;
+  const { language = 'english', q = '', cursor, pageSize = 50 } = req.query;
+
   try {
-    let result;
-    // Numeric search with language: find books by language, then song by number in that book
-    if (q && /^\d+$/.test(q.trim()) && language) {
-      // 1. Find the book for the language
-      const bookRes = await pool.query('SELECT id FROM books WHERE language = $1', [[language]]);
-      if (!bookRes.rows.length) {
-        return res.json([]); // No song books for this language
-      }
-      // store the book id(s)
-      const bookIds = bookRes.rows.map(row => row.id);
+    const queryParams = [];
+    const conditions = [`language = $${queryParams.length + 1}`];
+    queryParams.push(language);
+    
 
-      // 2. Find the songbase_id in book_song_map for these book(s) and number
-      const mapRes = await pool.query(
-        'SELECT songbase_id FROM book_song_map WHERE book_id = ANY($1) AND number_in_book = $2',
-        [bookIds, Number(q)]
-      );
-      if (!mapRes.rows.length) {
-        return res.json([]); // No song for this number in this book
-      }
-      const songIds = mapRes.rows.map(row => row.songbase_id);
+    // Title or lyrics match
+    conditions.push(`(title ILIKE $${queryParams.length + 1} OR lyrics ILIKE $${queryParams.length + 1})`);
+    queryParams.push(`%${q}%`);
 
-      // 3. Get the song title from songs table
-      const songRes = await pool.query(
-        'SELECT id, title FROM songs WHERE songbase_id = ANY($1)',
-        [songIds]
-      );
-      result = songRes.rows;
-    } else if (q) {
-      // Text: search in title + lyrics, and filter by language if provided
-      let queryText = `
-        SELECT id, title 
+    const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    // Base query with rank computed in SQL
+    let queryText = `
+      WITH ranked_songs AS (
+        SELECT
+          id,
+          title,
+          CASE
+            WHEN LOWER(title) LIKE LOWER($${queryParams.length + 1}) THEN 1
+            WHEN LOWER(title) LIKE LOWER($${queryParams.length + 2}) THEN 2
+            ELSE 3
+          END AS rank
         FROM songs
-        WHERE language = $1
-          AND (title ILIKE $2 OR lyrics ILIKE $3)
-        ORDER BY
-          CASE 
-            WHEN LOWER(title) LIKE LOWER($4) THEN 1   -- Titles starting with query
-            WHEN LOWER(title) LIKE LOWER($5) THEN 2   -- Titles containing query
-            ELSE 3                                    -- Lyrics containing query
-          END,
-          LOWER(REGEXP_REPLACE(title, '^[^a-zA-Z]+', '')) ASC
+        ${whereClause}
+      )
+      SELECT id, title, rank
+      FROM ranked_songs
+    `;
+
+    queryParams.push(`${q.toLowerCase()}%`, `%${q.toLowerCase()}%`); // rank computation
+
+    // Apply cursor
+    if (cursor) {
+      const { rank: lastRank, title: lastTitle } = decodeCursor(cursor);
+      queryText += `
+        WHERE (rank > $${queryParams.length + 1})
+           OR (rank = $${queryParams.length + 1} AND LOWER(title) > LOWER($${queryParams.length + 2}))
       `;
-
-      const queryParams = [
-        language,
-        `%${q}%`,       // $2: for title ILIKE
-        `%${q}%`,       // $3: for lyrics ILIKE
-        `${q.toLowerCase()}%`, // $4: title starts with query
-        `%${q.toLowerCase()}%` // $5: title contains query
-      ];
-
-      result = (await pool.query(queryText, queryParams)).rows;
+      queryParams.push(lastRank, lastTitle);
     }
 
-    res.json(result);
+    queryText += `
+      ORDER BY rank, LOWER(REGEXP_REPLACE(title, '^[^a-zA-Z]+', ''))
+      LIMIT $${queryParams.length + 1}
+    `;
+    queryParams.push(Number(pageSize) + 1); // Fetch extra to check if more pages exist
 
+    const result = await pool.query(queryText, queryParams);
+    let songs = result.rows;
+
+    // Determine nextCursor
+    let nextCursor = null;
+    let hasMore = false;
+    if (songs.length > pageSize) {
+      hasMore = true;
+      songs = songs.slice(0, pageSize);
+      const last = songs[songs.length - 1];
+      nextCursor = encodeCursor(last.rank, last.title);
+    }
+
+    // Remove rank from response
+    songs = songs.map(({ rank, ...rest }) => rest);
+
+    res.json({ songs, nextCursor, hasMore });
   } catch (err) {
     console.error('Search error:', err);
     res.status(500).json({ error: err.message });
   }
 });
+
 
 
 

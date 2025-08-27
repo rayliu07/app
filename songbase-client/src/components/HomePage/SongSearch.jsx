@@ -32,7 +32,9 @@ function SongSearch({ language }) {
           url = `${process.env.REACT_APP_API_URL}/songs/search?language=${encodeURIComponent(language)}&q=${encodeURIComponent(query)}`;
           const res = await fetch(url);
           const data = await res.json();
-          setSongs(data.songs || data || []);
+          setSongs(data.songs || []);
+          setNextCursor(data.nextCursor);
+          setHasMore(data.hasMore);
         }
       } catch (err) {
         console.error('Failed to fetch songs:', err);
@@ -48,7 +50,7 @@ function SongSearch({ language }) {
 
   // Infinite scroll for paginated (non-search) results
   useEffect(() => {
-    if (query.trim() !== '' || !hasMore) return;
+    if (!hasMore) return;
 
     let debounceTimeout = null;
     const handleScroll = () => {
@@ -77,7 +79,12 @@ function SongSearch({ language }) {
     setLoadingMore(true);
     loadingRef.current = true;
     try {
-      const url = `${process.env.REACT_APP_API_URL}/songs?language=${encodeURIComponent(language)}&cursor=${encodeURIComponent(nextCursor)}`;
+      let url;
+    if (query.trim() === '') {
+      url = `${process.env.REACT_APP_API_URL}/songs?language=${encodeURIComponent(language)}&cursor=${encodeURIComponent(nextCursor)}`;
+    } else {
+      url = `${process.env.REACT_APP_API_URL}/songs/search?language=${encodeURIComponent(language)}&q=${encodeURIComponent(query)}&cursor=${encodeURIComponent(nextCursor)}`;
+    }
       const res = await fetch(url);
       const data = await res.json();
       setSongs((prev) => [...prev, ...(data.songs || [])]);
@@ -90,7 +97,7 @@ function SongSearch({ language }) {
       loadingRef.current = false;
     }
   };
-  console.log(songs);
+  
   return (
     <div className="p-4 max-w-xl mx-auto">
       <input
