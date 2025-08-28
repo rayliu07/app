@@ -1,5 +1,6 @@
 import express from 'express';
 import pool from '../db/pool.js';
+import NodeCache from 'node-cache';
 
 const songsRouter = express.Router();
 
@@ -67,69 +68,135 @@ songsRouter.get('/search', async (req, res) => {
   const { language = 'english', q = '', cursor, pageSize = 50 } = req.query;
 
   try {
-    const queryParams = [];
-    const conditions = [`language = $${queryParams.length + 1}`];
-    queryParams.push(language);
-    
-
-    // Title or lyrics match
-    conditions.push(`(title ILIKE $${queryParams.length + 1} OR lyrics ILIKE $${queryParams.length + 1})`);
-    queryParams.push(`%${q}%`);
-
-    const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
-
-    // Base query with rank computed in SQL
-    let queryText = `
-      WITH ranked_songs AS (
-        SELECT
-          id,
-          title,
-          CASE
-            WHEN LOWER(title) LIKE LOWER($${queryParams.length + 1}) THEN 1
-            WHEN LOWER(title) LIKE LOWER($${queryParams.length + 2}) THEN 2
-            ELSE 3
-          END AS rank
-        FROM songs
-        ${whereClause}
-      )
-      SELECT id, title, rank
-      FROM ranked_songs
-    `;
-
-    queryParams.push(`${q.toLowerCase()}%`, `%${q.toLowerCase()}%`); // rank computation
-
-    // Apply cursor
-    if (cursor) {
-      const { rank: lastRank, title: lastTitle } = decodeCursor(cursor);
-      queryText += `
-        WHERE (rank > $${queryParams.length + 1})
-           OR (rank = $${queryParams.length + 1} AND LOWER(title) > LOWER($${queryParams.length + 2}))
-      `;
-      queryParams.push(lastRank, lastTitle);
-    }
-
-    queryText += `
-      ORDER BY rank, LOWER(REGEXP_REPLACE(title, '^[^a-zA-Z]+', ''))
-      LIMIT $${queryParams.length + 1}
-    `;
-    queryParams.push(Number(pageSize) + 1); // Fetch extra to check if more pages exist
-
-    const result = await pool.query(queryText, queryParams);
-    let songs = result.rows;
-
-    // Determine nextCursor
+    let songs = [];
+    let hasMore = false; 
     let nextCursor = null;
-    let hasMore = false;
-    if (songs.length > pageSize) {
-      hasMore = true;
-      songs = songs.slice(0, pageSize);
-      const last = songs[songs.length - 1];
-      nextCursor = encodeCursor(last.rank, last.title);
+    if (q && /^\d+$/.test(q.trim()) && language) {
+      // 1. Find the book(s) for the language
+      const bookRes = await pool.query('SELECT id FROM books WHERE $1 = ANY(language)', [language]);
+      if (!bookRes.rows.length) {
+        return res.json({ songs: [], nextCursor: null, hasMore: false });
+      }
+      const bookIds = bookRes.rows.map(row => row.id);
+
+      // 2. Find the songbase_id in book_song_map for these book(s) and number
+      const mapRes = await pool.query(
+        'SELECT songbase_id FROM book_song_map WHERE book_id = ANY($1) AND number_in_book = $2',
+        [bookIds, Number(q)]
+      );
+      if (!mapRes.rows.length) {
+        return res.json({ songs: [], nextCursor: null, hasMore: false });
+      }
+      const songIds = mapRes.rows.map(row => row.songbase_id);
+
+      // 3. Get the song title from songs table, apply pagination
+      const pageSize = Number(req.query.pageSize) || 50;
+      const cursor = req.query.cursor;
+
+      let queryText = `
+        SELECT id, title
+        FROM songs
+        WHERE songbase_id = ANY($1)
+      `;
+
+      const queryParams = [songIds];
+
+      // Apply cursor (if provided)
+      if (cursor) {
+        queryText += ` AND LOWER(title) > LOWER($2)`;
+        queryParams.push(cursor);
+      }
+
+      queryText += `
+        ORDER BY LOWER(title)
+        LIMIT $${queryParams.length + 1}
+      `;
+      queryParams.push(pageSize + 1); // Fetch one extra for hasMore check
+
+      const songRes = await pool.query(queryText, queryParams);
+      songs = songRes.rows;
+
+      // Handle pagination
+      nextCursor = null;
+      hasMore = false;
+      if (songs.length > pageSize) {
+        hasMore = true;
+        songs = songs.slice(0, pageSize);
+        nextCursor = songs[songs.length - 1].title;
+      }
+      console.log(songs);
+      
+    } else {
+      /////BEGINNING OF SECOND PART
+      const queryParams = [];
+      const conditions = [`language = $${queryParams.length + 1}`];
+      queryParams.push(language);
+      
+
+      // Title or lyrics match
+      conditions.push(`(
+        regexp_replace(lower(title), '[^a-z0-9]+', '', 'g') LIKE '%' || regexp_replace(lower($${queryParams.length + 1}), '[^a-z0-9]+', '', 'g') || '%'
+        OR
+        regexp_replace(lower(lyrics), '[^a-z0-9]+', '', 'g') LIKE '%' || regexp_replace(lower($${queryParams.length + 1}), '[^a-z0-9]+', '', 'g') || '%'
+      )`);
+      queryParams.push(q);
+
+
+      const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+
+      // Base query with rank computed in SQL
+      let queryText = `
+        WITH ranked_songs AS (
+          SELECT
+            id,
+            title,
+            CASE
+              WHEN regexp_replace(lower(title), '[^a-z0-9]+', '', 'g') LIKE regexp_replace(lower($${queryParams.length + 1}), '[^a-z0-9]+', '', 'g') || '%' THEN 1
+              WHEN regexp_replace(lower(title), '[^a-z0-9]+', '', 'g') LIKE '%' || regexp_replace(lower($${queryParams.length + 2}), '[^a-z0-9]+', '', 'g') || '%' THEN 2
+              ELSE 3
+            END AS rank
+
+          FROM songs
+          ${whereClause}
+        )
+        SELECT id, title, rank
+        FROM ranked_songs
+      `;
+
+      queryParams.push(q, q); // rank computation
+
+      // Apply cursor
+      if (cursor) {
+        const { rank: lastRank, title: lastTitle } = decodeCursor(cursor);
+        queryText += `
+          WHERE (rank > $${queryParams.length + 1})
+            OR (rank = $${queryParams.length + 1} AND LOWER(title) > LOWER($${queryParams.length + 2}))
+        `;
+        queryParams.push(lastRank, lastTitle);
+      }
+
+      queryText += `
+        ORDER BY rank, LOWER(REGEXP_REPLACE(title, '^[^a-zA-Z]+', ''))
+        LIMIT $${queryParams.length + 1}
+      `;
+      queryParams.push(Number(pageSize) + 1); // Fetch extra to check if more pages exist
+
+      const result = await pool.query(queryText, queryParams);
+       songs = result.rows;
+
+      // Determine nextCursor
+      if (songs.length > pageSize) {
+        hasMore = true;
+        songs = songs.slice(0, pageSize);
+        const last = songs[songs.length - 1];
+        nextCursor = encodeCursor(last.rank, last.title);
+      }
+
+      // Remove rank from response
+      songs = songs.map(({ rank, ...rest }) => rest);
     }
 
-    // Remove rank from response
-    songs = songs.map(({ rank, ...rest }) => rest);
-
+    
     res.json({ songs, nextCursor, hasMore });
   } catch (err) {
     console.error('Search error:', err);
