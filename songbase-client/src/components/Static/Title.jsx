@@ -7,7 +7,7 @@ function Title() {
         {/* App title */}
         <h1>
             <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
-                Songbase Replicate
+                SongSearch
             </Link>
         </h1>
         </div>
