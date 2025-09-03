@@ -1,0 +1,414 @@
+/* Color scheme: edede9, d6ccc2, f5ebe0, e3d5ca, d5bdaf */
+* {
+  box-sizing: border-box;
+}
+
+@font-face {
+  font-family: 'Neue Regrade';
+  src: url('./assets/Neue Regrade Variable.ttf') format('truetype'); /* Adjust path and format */
+}
+
+body {
+  margin: 0;
+  font-family: 'Neue Regrade', Arial, sans-serif;
+  background-color: #edede9;
+  color: #333;
+}
+
+/* Header wrapper */
+.header {
+  position: relative;         /* stays at top on scroll */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 80px;             /* fixed height for consistent spacing */
+
+  background-color: #d6ccc2;
+  display: flex;
+  justify-content: center;  /* center the title horizontally */
+  align-items: center;
+  padding: 1rem 2rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  z-index: 1000;
+}
+.extraSpace {
+  height: 80px;             /* same height as header to avoid content being hidden */
+}
+
+/* Title styling */
+.header-title {
+  font-size: 2.5rem;
+  font-weight: bold;
+  margin: 0;
+  flex: 1;                /* let it expand to take space */
+  text-align: center;
+  color: #5a4a42;
+}
+
+/* Title link */
+.header-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Nav container */
+.nav {
+  position: absolute;     /* move to the right */
+  right: 2rem;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Nav link (Books tab) */
+.nav-link {
+  font-size: 1.2rem;
+  padding: 0.5rem 1rem;
+  background-color: #f5ebe0;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #5a4a42;
+  transition: background-color 0.2s ease;
+  white-space: nowrap;
+}
+
+.nav-link:hover {
+  background-color: #e3d5ca;
+}
+
+/* --- MOBILE FIX --- */
+@media (max-width: 600px) {
+  .header {
+    padding: 0.5rem 1rem;
+  }
+
+  .header-title {
+    font-size: 1.8rem; /* slightly smaller title */
+  }
+
+  .nav {
+    right: 1rem; /* pull Books closer to the edge */
+  }
+
+  .nav-link {
+    font-size: 0.9rem; /* make Books smaller */
+    padding: 0.3rem 0.6rem;
+  }
+}
+
+/* Language selector wrapper */
+label {
+  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+  font-size: 1rem;
+  color: #5a4a42;
+  margin-left: 2rem; /* optional spacing if next to header/nav */
+  font-weight: 500;
+}
+
+/* Select box */
+select {
+  margin-left: 0.5rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  border: 1px solid #d5bdaf;
+  background-color: #f5ebe0;
+  color: #5a4a42;
+  font-size: 1rem;
+  outline: none;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  cursor: pointer;
+}
+
+/* Hover & focus */
+select:hover {
+  background-color: #e3d5ca;
+  border-color: #d6ccc2;
+}
+
+select:focus {
+  background-color: #e3d5ca;
+  border-color: #5a4a42;
+}
+
+/* Container wrapper */
+.search-container {
+  max-width: 600px;      /* similar to your max-w-xl */
+  margin: 2rem auto;
+  padding: 1rem;
+}
+
+/* Search input */
+.search-container input[type="text"] {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  font-size: 1.1rem;
+  border-radius: 12px;
+  border: 1px solid #d5bdaf;
+  background-color: #f5ebe0;
+  color: #5a4a42;
+  outline: none;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.search-container input[type="text"]:focus {
+  background-color: #e3d5ca;
+  border-color: #5a4a42;
+}
+
+/* Loading / No results text */
+.search-container p {
+  margin-top: 0.5rem;
+  font-size: 0.95rem;
+  color: #5a4a42;
+}
+
+/* Song list */
+.search-container ul {
+  margin-top: 1rem;
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem; /* spacing between list items */
+}
+
+/* Song list item */
+.search-container li {
+  background-color: #f5ebe0;
+  border-radius: 12px;
+  padding: 0.8rem 1rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.search-container li:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Song title link */
+.search-container li a {
+  text-decoration: none;
+  color: #5a4a42;
+  display: block;
+}
+
+.search-container li .font-bold {
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+/* Optional small text (like hymn number) */
+.search-container li .text-sm {
+  font-size: 0.85rem;
+  color: #7a6a5a;
+}
+
+/* Books page container */
+.books-container {
+  max-width: 600px;
+  margin: 2rem auto;
+  padding: 1rem;
+  background-color: #edede9; /* matches page background */
+}
+
+/* Page title */
+.books-container h1 {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #5a4a42;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+/* Book list */
+.books-container ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem; /* space between items */
+}
+
+/* Individual book items */
+.books-container li {
+  background-color: #f5ebe0;
+  border-radius: 12px;
+  padding: 0.8rem 1rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+/* Hover effect */
+.books-container li:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Book link */
+.books-container li a {
+  text-decoration: none;
+  color: #5a4a42;
+  font-weight: 500;
+  font-size: 1.05rem;
+  display: block;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .books-container {
+    margin: 1rem;
+  }
+
+  .books-container h1 {
+    font-size: 1.5rem;
+  }
+
+  .books-container li a {
+    font-size: 1rem;
+  }
+}
+
+/* Songs list container */
+.songs-container {
+  max-width: 700px;
+  margin: 2rem auto;
+  padding: 1rem;
+  background-color: #edede9; /* app background */
+}
+
+/* Song card */
+.song-card {
+  background-color: #f5ebe0;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+/* Hover lift effect */
+.song-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Song link */
+.song-card a {
+  text-decoration: none;
+  color: #5a4a42;
+  display: block;
+}
+
+/* Song title */
+.song-card h2 {
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin: 0;
+  color: #5a4a42;
+}
+
+/* Loading text */
+.songs-container p {
+  margin-top: 1rem;
+  font-size: 1rem;
+  color: #7a6c64;
+  text-align: center;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .songs-container {
+    margin: 1rem;
+  }
+
+  .song-card h2 {
+    font-size: 1.1rem;
+  }
+}
+
+
+/* Container for the parsed song */
+.parsed-song-container {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 1rem;
+  background-color: #edede9;
+  border-radius: 12px;
+}
+
+/* Verse reference + capo text */
+.verse-reference,
+.capo-text {
+  font-size: 1rem;
+  color: #5a4a42;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+/* Controls section */
+.controls {
+  display: flex;
+  flex-wrap: wrap;         /* allows wrapping if too narrow */
+  gap: 0.75rem;            /* space between buttons */
+  margin: 1rem 0;
+  justify-content: center; /* center horizontally */
+  align-items: center;     /* vertically align */
+}
+
+/* Buttons */
+.controls button {
+  padding: 0.5rem 1rem;
+  background-color: #f5ebe0;
+  border: 1px solid #d5bdaf;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #5a4a42;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  min-width: 120px;
+  text-align: center;
+}
+
+.controls button:hover {
+  background-color: #e3d5ca;
+  transform: translateY(-1px);
+}
+
+.controls button:active {
+  transform: translateY(1px);
+}
+
+/* Transpose indicator */
+.transpose-indicator {
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: #7a6c64;
+  align-self: center;
+}
+
+/* Tune selector (dropdown) */
+.tune-selector select {
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid #d5bdaf;
+  background-color: #f5ebe0;
+  color: #5a4a42;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.tune-selector select:hover {
+  background-color: #e3d5ca;
+}
+
+/* Lyrics section */
+.lyrics-section {
+  margin-top: 1.5rem;
+  line-height: 1.6;
+  font-size: 1.05rem;
+  color: #333;
+}

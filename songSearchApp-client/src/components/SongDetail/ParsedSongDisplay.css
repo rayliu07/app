@@ -1,0 +1,72 @@
+/* Container */
+.parsed-song-container {
+    font-family: monospace;
+    white-space: pre;
+    margin: 1em;
+}
+
+/* Each line renders chord row then lyric row */
+.line-block {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0.4em;
+    box-sizing: border-box;
+    /* so padding-left doesn’t mess width */
+}
+
+/* When a line is marked as chorus, indent both chord+lyric rows equally.
+   Uses the --indent-ch variable set inline; defaults to 2ch if not set. */
+.chorus-line {
+    padding-left: calc(var(--indent-ch, 2) * 1ch);
+    background-color: rgba(240, 240, 240, 0.05);
+    /* optional subtle highlight */
+}
+
+/* Chords above lyrics */
+.chord-line {
+    font-weight: bold;
+    color: #1a1a1a;
+    line-height: 1.2;
+    white-space: pre;
+}
+
+/* Lyrics */
+.lyric-line {
+    line-height: 1.4;
+    white-space: pre;
+}
+
+/* Section headers like [Chorus], [Verse] (if you use them) */
+.section-header {
+    font-weight: bold;
+    text-transform: uppercase;
+    margin: 0.5em 0 0.2em 0;
+    color: #333;
+}
+
+.chorus-header {
+    color: #1a73e8;
+}
+
+/* Controls, capo, etc. */
+.controls {
+    margin: 0.5em 0;
+}
+
+.capo-text,
+.verse-reference {
+    font-style: italic;
+    margin-bottom: 0.3em;
+}
+
+.transpose-indicator {
+    margin-left: 0.5em;
+    font-weight: bold;
+}
+
+button {
+    margin-right: 0.4em;
+    padding: 0.2em 0.5em;
+    cursor: pointer;
+    font-family: inherit;
+}
