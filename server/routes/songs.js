@@ -94,9 +94,11 @@ songsRouter.get('/search', async (req, res) => {
       const cursor = req.query.cursor;
 
       let queryText = `
-        SELECT id, title
-        FROM songs
-        WHERE songbase_id = ANY($1)
+        SELECT s.id, s.title, b.name AS book_name, m.number_in_book
+        FROM songs s
+        JOIN book_song_map m ON s.songbase_id = m.songbase_id
+        JOIN books b ON b.id = m.book_id
+        WHERE s.songbase_id = ANY($1)
       `;
 
       const queryParams = [songIds];
@@ -125,6 +127,15 @@ songsRouter.get('/search', async (req, res) => {
         nextCursor = songs[songs.length - 1].title;
       }
       console.log(songs);
+
+      songs = songs.map(({ id, title, book_name, number_in_book }) => ({
+        id,
+        title,
+        book: {
+          name: book_name,
+          number: number_in_book
+        }
+      }));
       
     } else {
       /////BEGINNING OF SECOND PART

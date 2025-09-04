@@ -32,6 +32,7 @@ function SongSearch({ language }) {
           url = `${import.meta.env.VITE_API_URL}/songs/search?language=${encodeURIComponent(language)}&q=${encodeURIComponent(query)}`;
           const res = await fetch(url);
           const data = await res.json();
+          console.log(data);
           setSongs(data.songs || []);
           setNextCursor(data.nextCursor);
           setHasMore(data.hasMore);
@@ -115,7 +116,11 @@ function SongSearch({ language }) {
           <li key={song.id} className="bg-white p-3 rounded-lg shadow">
             <Link to={`/songs/${song.id}`} className="block">
               <div className="font-bold">{song.title}</div>
-              {/* <div className="text-sm text-gray-500">{song.hymn_number}</div> I need to decide whether or not to add it*/}
+              {song.book?.name && song.book?.number && (
+                <div className="text-sm text-gray-500">
+                  {`${song.book.name}: ${song.book.number}`}
+                </div>
+              )}
             </Link>
           </li>
         ))}
