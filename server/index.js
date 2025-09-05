@@ -4,6 +4,8 @@ import songsRouter from './routes/songs.js';
 import languagesRouter from './routes/languages.js'; 
 import booksRouter from './routes/books.js';
 import cors from 'cors'; 
+import pool from '../db/pool.js';
+
 
 
 
