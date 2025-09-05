@@ -14,4 +14,14 @@ languagesRouter.get('/', async (req, res) => {
   }
 });
 
+app.get('/test-db', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT NOW()'); // simple query
+    res.send({ dbTime: result.rows[0] });
+  } catch (err) {
+    console.error('DB connection error:', err);
+    res.status(500).send({ error: err.message });
+  }
+});
+
 export default languagesRouter;

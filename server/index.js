@@ -4,7 +4,6 @@ import songsRouter from './routes/songs.js';
 import languagesRouter from './routes/languages.js'; 
 import booksRouter from './routes/books.js';
 import cors from 'cors'; 
-import pool from '../db/pool.js';
 
 
 
@@ -23,15 +22,7 @@ app.use('/api/books', booksRouter);
 
 app.get('/', (req, res) => res.send('🎶 Songbase API running!'));
 
-app.get('/test-db', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT NOW()'); // simple query
-    res.send({ dbTime: result.rows[0] });
-  } catch (err) {
-    console.error('DB connection error:', err);
-    res.status(500).send({ error: err.message });
-  }
-});
+
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
