@@ -1,5 +1,5 @@
 import express from 'express';
-import pool from '../../db/pool.js';
+import pool from '../db/pool.js';
 const booksRouter = express.Router();
 
 booksRouter.get('/', async (_req, res) => {
