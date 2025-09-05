@@ -2,7 +2,7 @@
 .parsed-song-container {
     font-family: monospace;
     white-space: pre;
-    margin: 1em;
+    margin: 2 rem auto;
 }
 
 /* Each line renders chord row then lyric row */
@@ -70,3 +70,14 @@ button {
     cursor: pointer;
     font-family: inherit;
 }
+
+.extra-link {
+  color: #5a4a42; /* example: coral color, change to fit your scheme */
+  text-decoration: none;
+}
+
+.extra-link:hover {
+  text-decoration: underline; /* optional hover effect */
+
+}
+

@@ -45,6 +45,10 @@ function ParsedSongDisplay({ rawLyrics }) {
   const [transpose, setTranspose] = useState(0);
   const [selectedTune, setSelectedTune] = useState(null);
 
+  // 🔋 NEW: wake lock state
+  const [wakeLock, setWakeLock] = useState(null);
+  const [wakeLockEnabled, setWakeLockEnabled] = useState(false);
+
   const preSegments = useMemo(() => parseTuneSegments(rawLyrics), [rawLyrics]);
   const tuneNames = useMemo(() => [...new Set(preSegments.filter(s => s.type === 'tune').map(s => s.tuneName))], [preSegments]);
   const initialTune = tuneNames.length > 0 ? tuneNames[0] : null;
@@ -52,6 +56,35 @@ function ParsedSongDisplay({ rawLyrics }) {
   useEffect(() => {
     setSelectedTune(initialTune);
   }, [initialTune]);
+
+  // 🔋 NEW: wake lock effect
+  useEffect(() => {
+    if (wakeLockEnabled && 'wakeLock' in navigator) {
+      let lock;
+      navigator.wakeLock.request('screen').then(l => {
+        lock = l;
+        setWakeLock(lock);
+        lock.addEventListener('release', () => {
+          setWakeLock(null);
+          setWakeLockEnabled(false);
+        });
+      }).catch(err => {
+        console.error('Wake Lock failed:', err);
+        setWakeLockEnabled(false);
+      });
+
+      return () => {
+        if (lock) {
+          lock.release().catch(() => {});
+        }
+      };
+    } else {
+      if (wakeLock) {
+        wakeLock.release().catch(() => {});
+        setWakeLock(null);
+      }
+    }
+  }, [wakeLockEnabled]);
 
   if (!rawLyrics) return null;
 
@@ -118,7 +151,6 @@ function ParsedSongDisplay({ rawLyrics }) {
     return processed;
   }, [preSegments, selectedTune]);
 
-  // Compute first verse chord positions (anchors) for alignment
   const firstVerseAnchors = useMemo(() => {
     if (!verses.length) return [];
     return verses[0].lines.map(line =>
@@ -175,6 +207,22 @@ function ParsedSongDisplay({ rawLyrics }) {
         <button onClick={() => setShowChordsEveryVerse(prev => !prev)}>
           {showChordsEveryVerse ? 'Hide Chords on Repeated Verses' : 'Show Chords on All Verses'}
         </button>
+
+        {/* 🔋 Wake Lock toggle switch */}
+        {'wakeLock' in navigator && (
+          <div className="wake-lock-toggle-container" style={{ marginLeft: 12 }}>
+            <span>Keep Screen Awake</span>
+            <label className="switch">
+              <input
+                type="checkbox"
+                checked={wakeLockEnabled}
+                onChange={() => setWakeLockEnabled(prev => !prev)}
+              />
+              <span className="slider round"></span>
+            </label>
+          </div>
+        )}
+
         {tuneNames.length >= 2 && (
           <div className="tune-selector" style={{ marginLeft: 12 }}>
             <label>
@@ -192,32 +240,27 @@ function ParsedSongDisplay({ rawLyrics }) {
           <div
             key={vi}
             className="verse-block"
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '2.25rem 1fr',
-              columnGap: '8px',
-              marginTop: '12px',
-              alignItems: 'start',
-            }}
           >
             <div className="verse-number-column" style={{ fontWeight: 'bold' }}>
               {verse.isNumbered ? verse.verseNumber : ''}
             </div>
             <div className="lyrics-column">
               {verse.lines.map((lineObj, li) => {
-                // Only align chords to first verse for numbered verses (not chorus)
                 let chordsToRender = lineObj.chords;
-                if (showChordsEveryVerse && verse.isNumbered && li < firstVerseAnchors.length) {
+                if (showChordsEveryVerse && verse.isNumbered && vi > 0 && li < firstVerseAnchors.length) {
                   chordsToRender = firstVerseAnchors[li].map(({ chord, charIndex }) => ({
                     rawChords: chord,
                     rawPosition: charIndex,
                     hasNextChar: true
                   }));
                 }
-
                 return (
-                  <div key={li} className="line-block" style={{ fontFamily: 'monospace', whiteSpace: 'pre' }}>
-                    {showChords && <div className="chord-line">{renderChordLine({ ...lineObj, chords: chordsToRender })}</div>}
+                  <div key={li} className="line-block" style={{ whiteSpace: 'pre' }}>
+                    {showChords && (
+                      <div className="chord-line">
+                        {renderChordLine({ ...lineObj, chords: chordsToRender })}
+                      </div>
+                    )}
                     <div className="lyric-line">{lineObj.cleanLyrics}</div>
                   </div>
                 );

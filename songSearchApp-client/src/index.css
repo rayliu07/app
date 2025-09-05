@@ -1,4 +1,9 @@
 /* Color scheme: edede9, d6ccc2, f5ebe0, e3d5ca, d5bdaf */
+:root {
+  --lyrics-font-size: 0.85rem; /* base font size for lyrics */
+  --chord-font-size: 0.85rem;  /* same as lyrics for alignment */
+  --line-height: 1.2rem;       /* adjust vertical spacing */
+}
 * {
   box-sizing: border-box;
 }
@@ -329,10 +334,9 @@ select:focus {
   }
 }
 
-
 /* Container for the parsed song */
 .parsed-song-container {
-  max-width: 800px;
+  max-width: 100%;
   margin: 2rem auto;
   padding: 1rem;
   background-color: #edede9;
@@ -354,22 +358,23 @@ select:focus {
   flex-wrap: wrap;         /* allows wrapping if too narrow */
   gap: 0.75rem;            /* space between buttons */
   margin: 1rem 0;
-  justify-content: center; /* center horizontally */
+  justify-content: left; /* center horizontally */
   align-items: center;     /* vertically align */
 }
 
 /* Buttons */
 .controls button {
-  padding: 0.5rem 1rem;
+  font-family: 'neue regrade';
+  padding: 0.25rem 0.5rem; /* smaller padding */
   background-color: #f5ebe0;
   border: 1px solid #d5bdaf;
-  border-radius: 8px;
-  font-size: 1rem;
+  border-radius: 6px; /* slightly smaller corners */
+  font-size: 0.85rem; /* smaller text */
   font-weight: 500;
   color: #5a4a42;
   cursor: pointer;
   transition: background-color 0.2s ease, transform 0.1s ease;
-  min-width: 120px;
+  min-width: 80px; /* smaller width */
   text-align: center;
 }
 
@@ -405,10 +410,189 @@ select:focus {
   background-color: #e3d5ca;
 }
 
-/* Lyrics section */
+/* Lyrics section - multi-column with balanced filling */
 .lyrics-section {
-  margin-top: 1.5rem;
-  line-height: 1.6;
-  font-size: 1.05rem;
-  color: #333;
+  display: block;
+  max-width: 1400px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  column-fill: balance;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: left;
+  overflow-x: hidden; /* Prevent horizontal scroll */
+}
+
+/* Update media queries to check available width */
+@media (min-width: 1800px) {
+  .lyrics-section {
+    columns: 4 400px;  /* Only 4 columns if at least 1600px available */
+    column-gap: 3rem;
+    max-width: fit-content;
+  }
+}
+
+@media (min-width: 1400px) and (max-width: 1799px) {
+  .lyrics-section {
+    columns: 3 400px;  /* Only 3 columns if at least 1200px available */
+    column-gap: 3rem;
+    max-width: fit-content;
+  }
+}
+
+@media (min-width: 900px) and (max-width: 1399px) {
+  .lyrics-section {
+    columns: 2 400px;  /* Only 2 columns if at least 800px available */
+    column-gap: 1.5rem;
+    max-width: fit-content;
+  }
+}
+
+@media (max-width: 899px) {
+  .lyrics-section {
+    columns: 1 auto;   /* Single column for smaller screens */
+    max-width: fit-content;
+  }
+}
+
+/* Verse blocks - simple vertical stacking */
+.verse-block {
+  display: grid;
+  grid-template-columns: 2.25rem auto;
+  column-gap: 8px;
+  margin-bottom: 1.5rem;    /* consistent spacing between verses */
+  align-items: start;
+  max-width: 100%;          /* don't exceed container width */
+  break-inside: avoid;      /* prevent breaking inside verse */
+  page-break-inside: avoid;
+  margin-bottom: 1.5rem;
+}
+
+/* Verse number + lyrics wrapper */
+.verse-number-and-lyrics {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Verse number */
+.verse-number-column {
+  flex: 0 0 2.25rem;       /* fixed width */
+  font-weight: bold;
+  font-size: var(--lyrics-font-size);
+  text-align: right;
+}
+
+/* Lyrics + chords */
+.lyrics-column {
+  display: block;
+  font-family: monospace;
+  font-size: var(--lyrics-font-size);
+  line-height: var(--line-height);
+  white-space: nowrap;        /* Prevent wrapping to get natural width */
+  min-width: max-content;     /* Take width needed for longest line */
+  width: 100%;
+}
+
+/* Individual lines - don't wrap, take natural width */
+.line-block {
+  display: block;
+  white-space: nowrap;        /* Don't wrap - take full width needed */
+  font-size: inherit;
+  margin-bottom: 0.1rem;
+  min-width: max-content;     /* Ensure it takes width it needs */
+}
+
+.chord-line {
+  display: block;
+  font-size: var(--chord-font-size);
+  line-height: var(--line-height);
+  color: #7a6c64;
+  white-space: nowrap;        /* Don't wrap chords */
+}
+
+.lyric-line {
+  display: block;
+  font-size: var(--lyrics-font-size);
+  line-height: var(--line-height);
+  white-space: nowrap;        /* Don't wrap lyrics */
+}
+
+/* Verse blocks - fit content width */
+.verse-block {
+  display: grid;
+  grid-template-columns: 2.25rem max-content; /* Second column fits content */
+  column-gap: 8px;
+  margin-bottom: 1.5rem;
+  align-items: start;
+  width: max-content;         /* Verse block fits its content */
+  break-inside: avoid;
+  page-break-inside: avoid;
+
+  
+}
+/* Wake Lock toggle switch */
+.wake-lock-toggle-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+/* Switch wrapper */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+}
+
+/* Hide default checkbox */
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* Slider */
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.4s;
+  border-radius: 24px;
+}
+
+/* Circle inside the slider */
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+}
+
+/* Checked state */
+input:checked + .slider {
+  background-color: #4caf50;
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+/* Rounded slider */
+.slider.round {
+  border-radius: 24px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
 }
