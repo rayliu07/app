@@ -21,6 +21,8 @@ app.use('/api/languages', languagesRouter);
 app.use('/api/books', booksRouter);
 
 app.get('/', (req, res) => res.send('🎶 Songbase API running!'));
+app.get('/health', (req, res) => res.send('OK'));
+
 
 
 
