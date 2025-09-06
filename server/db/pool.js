@@ -8,7 +8,7 @@ const pool = new pg.Pool({
   host: '/cloudsql/songsearchapp-471216:us-central1:ss',      // your Cloud SQL IP
   port: 5432,                 // default PostgreSQL port
   database: 'ss', 
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  ssl: false
 });
 
 export default pool;
