@@ -7,7 +7,7 @@ const pool = new pg.Pool({
   password: 'Ou5Qa22hyQQdVPdhlupAVqsvYyDCLe8A',      // your DB password (can include @, !, etc.)
   host: 'postgresql://ss_j5hw_user:Ou5Qa22hyQQdVPdhlupAVqsvYyDCLe8A@dpg-d2t5e3ruibrs73efkla0-a.oregon-postgres.render.com/ss_j5hw',      // your Cloud SQL IP
   port: 5432,                 // default PostgreSQL port
-  database: 'ss', 
+  database: 'ss_j5hw', 
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
